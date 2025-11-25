@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 export default function Counter() {
   const [count, setCount] = useState(0)
+
   return (
     <div className="flex flex-col items-center justify-center gap-10">
       <h1>Counter from React</h1>
