@@ -74,7 +74,7 @@ export default function App() {
           <CardHeader className="border-b">
             <CardTitle className="flex items-center gap-2">
               <ShoppingCart className="w-5 h-5" />
-              Point of Sales
+              Point of Sales Update Version Gaessssssss
             </CardTitle>
             <CardDescription>
               Add products to create a transaction
