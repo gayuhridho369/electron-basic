@@ -1,8 +1,10 @@
 import path from "node:path";
+
 import { app, BrowserWindow } from "electron";
 import started from "electron-squirrel-startup";
 import { initDatabase } from "./server/database";
 import { registerNotesHandlers } from "./server/handlers/note.handler";
+import { registerPosHandlers } from "./server/handlers/pos.handler";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -38,6 +40,9 @@ app.on("ready", () => {
 
   // Register IPC handlers
   registerNotesHandlers();
+
+  // Register IPC handlers
+  registerPosHandlers();
 
   // Create window app
   createWindow();

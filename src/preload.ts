@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 import type { ApiResponse } from "./server/schemas/main.schema";
 import type { Note, NoteDto } from "./server/schemas/note.schema";
+import type { Pos, PosDto } from "./server/schemas/pos.schema";
 
 const notesAPI = {
   getList: (keyword?: string): Promise<ApiResponse<Note[]>> =>
@@ -19,10 +20,20 @@ const notesAPI = {
     ipcRenderer.invoke("notes:delete", id),
 };
 
-contextBridge.exposeInMainWorld("notesAPI", notesAPI);
+const posAPI = {
+  getList: (): Promise<
+    ApiResponse<{ transaction_id: string; items: Pos[] }[]>
+  > => ipcRenderer.invoke("pos:getList"),
 
+  create: (dto: PosDto[]): Promise<ApiResponse<string>> =>
+    ipcRenderer.invoke("pos:create", dto),
+};
+
+contextBridge.exposeInMainWorld("notesAPI", notesAPI);
+contextBridge.exposeInMainWorld("posAPI", posAPI);
 declare global {
   interface Window {
     notesAPI: typeof notesAPI;
+    posAPI: typeof posAPI;
   }
 }

@@ -87,3 +87,7 @@ typings/
 
 # Electron-Forge
 out/
+
+# Database files
+*.db
+src/server/database/*.db

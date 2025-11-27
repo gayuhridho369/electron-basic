@@ -28,7 +28,7 @@ export function initDatabase() {
   // Enable foreign keys
   db.pragma("foreign_keys = ON");
 
-  // Create table
+  // ======= Initialize Table Notes =======
   db.exec(`
     CREATE TABLE IF NOT EXISTS notes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,10 +39,34 @@ export function initDatabase() {
     )
   `);
 
-  // Create index for faster searching on title
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_notes_title 
     ON notes(title)
+  `);
+
+  // ======= Initialize Table POS =======
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS pos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      transaction_id TEXT NOT NULL,
+      barcode TEXT NOT NULL,
+      product_name TEXT NOT NULL,
+      price REAL NOT NULL,
+      quantity INTEGER NOT NULL,
+      total REAL NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_pos_barcode 
+    ON pos(barcode)
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_pos_product_name 
+    ON pos(product_name)
   `);
 
   console.log("[Database] Initialized successfully");
