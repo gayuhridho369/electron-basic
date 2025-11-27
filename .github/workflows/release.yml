@@ -11,9 +11,6 @@ permissions:
 jobs:
   build-macos:
     runs-on: macos-latest
-    strategy:
-      matrix:
-        arch: [x64, arm64]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node.js
@@ -23,14 +20,14 @@ jobs:
 
       - run: npm install
 
-      - name: Build MacOS App
+      - name: Build macOS
         run: npm run make
 
       - uses: actions/upload-artifact@v4
         with:
-          name: mac-${{ matrix.arch }}
+          name: mac-arm64
           path: out/make/**/*
-  
+
   build-windows:
     runs-on: windows-latest
     steps:
@@ -42,7 +39,7 @@ jobs:
 
       - run: npm install
 
-      - name: Build Windows App
+      - name: Build Windows
         run: npm run make
 
       - uses: actions/upload-artifact@v4
@@ -61,7 +58,7 @@ jobs:
 
       - run: npm install
 
-      - name: Build Linux App
+      - name: Build Linux
         run: npm run make
 
       - uses: actions/upload-artifact@v4
@@ -78,10 +75,10 @@ jobs:
         with:
           path: ./dist
 
-      - name: Display downloaded files
+      - name: Show downloaded files
         run: ls -R ./dist
 
-      - name: Create GitHub Release
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: ./dist/**/*
