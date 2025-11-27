@@ -1,32 +1,32 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 
-import Database from "better-sqlite3";
-import { app } from "electron";
+import Database from 'better-sqlite3'
+import { app } from 'electron'
 
-let db: Database.Database | null = null;
+let db: Database.Database | null = null
 
 export function initDatabase() {
-  let dbPath: string;
+  let dbPath: string
 
   // If the app is packaged, use the userData directory
   if (app.isPackaged) {
-    dbPath = path.join(app.getPath("userData"), "electron-basic.db");
+    dbPath = path.join(app.getPath('userData'), 'electron-basic.db')
   } else {
     // If the app is not packaged, use the src/server/database directory
-    const dbDir = path.join(app.getAppPath(), "src", "server", "database");
+    const dbDir = path.join(app.getAppPath(), 'src', 'server', 'database')
     if (!fs.existsSync(dbDir)) {
-      fs.mkdirSync(dbDir, { recursive: true });
+      fs.mkdirSync(dbDir, { recursive: true })
     }
-    dbPath = path.join(dbDir, "electron-basic.db");
+    dbPath = path.join(dbDir, 'electron-basic.db')
   }
 
-  console.log("[Database] Initializing at:", dbPath);
+  console.log('[Database] Initializing at:', dbPath)
 
-  db = new Database(dbPath);
+  db = new Database(dbPath)
 
   // Enable foreign keys
-  db.pragma("foreign_keys = ON");
+  db.pragma('foreign_keys = ON')
 
   // ======= Initialize Table Notes =======
   db.exec(`
@@ -37,12 +37,12 @@ export function initDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
-  `);
+  `)
 
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_notes_title 
     ON notes(title)
-  `);
+  `)
 
   // ======= Initialize Table POS =======
   db.exec(`
@@ -57,34 +57,34 @@ export function initDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
-  `);
+  `)
 
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_pos_barcode 
     ON pos(barcode)
-  `);
+  `)
 
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_pos_product_name 
     ON pos(product_name)
-  `);
+  `)
 
-  console.log("[Database] Initialized successfully");
+  console.log('[Database] Initialized successfully')
 
-  return db;
+  return db
 }
 
 export function getDatabase(): Database.Database {
   if (!db) {
-    throw new Error("[Database] not initialized, something went wrong");
+    throw new Error('[Database] not initialized, something went wrong')
   }
-  return db;
+  return db
 }
 
 export function closeDatabase() {
   if (db) {
-    db.close();
-    console.log("[Database] has been closed");
-    db = null;
+    db.close()
+    console.log('[Database] has been closed')
+    db = null
   }
 }

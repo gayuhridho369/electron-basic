@@ -1,3 +1,6 @@
+import { cp, mkdir } from 'node:fs/promises'
+import path from 'node:path'
+
 import { FuseV1Options, FuseVersion } from '@electron/fuses'
 import { MakerDeb } from '@electron-forge/maker-deb'
 import { MakerRpm } from '@electron-forge/maker-rpm'
@@ -10,9 +13,40 @@ import type { ForgeConfig } from '@electron-forge/shared-types'
 
 const config: ForgeConfig = {
   packagerConfig: {
-    asar: true,
+    asar: {
+      unpack: '*.{node,dylib}',
+      unpackDir: '{better-sqlite3}',
+    },
   },
-  rebuildConfig: {},
+  rebuildConfig: {
+    onlyModules: ['better-sqlite3'],
+    force: true,
+  },
+  hooks: {
+    async packageAfterCopy(_forgeConfig, buildPath) {
+      const requiredNativePackages = [
+        'better-sqlite3',
+        'bindings',
+        'file-uri-to-path',
+      ]
+
+      const sourceNodeModulesPath = path.resolve(__dirname, 'node_modules')
+      const destNodeModulesPath = path.resolve(buildPath, 'node_modules')
+
+      await Promise.all(
+        requiredNativePackages.map(async (packageName) => {
+          const sourcePath = path.join(sourceNodeModulesPath, packageName)
+          const destPath = path.join(destNodeModulesPath, packageName)
+
+          await mkdir(path.dirname(destPath), { recursive: true })
+          await cp(sourcePath, destPath, {
+            recursive: true,
+            preserveTimestamps: true,
+          })
+        }),
+      )
+    },
+  },
   makers: [
     new MakerSquirrel({}),
     new MakerZIP({}, ['darwin']),
