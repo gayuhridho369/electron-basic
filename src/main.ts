@@ -1,10 +1,16 @@
 import path from 'node:path'
 
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, dialog } from 'electron'
 import started from 'electron-squirrel-startup'
 import { initDatabase } from './server/database'
 import { registerNotesHandlers } from './server/handlers/note.handler'
 import { registerPosHandlers } from './server/handlers/pos.handler'
+import { autoUpdater } from "electron-updater";
+import log from "electron-log";
+
+// Setup logger
+log.transports.file.level = "info";
+autoUpdater.logger = log;
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -29,7 +35,27 @@ const createWindow = () => {
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
     )
   }
+
+  // Cek update setelah window siap
+  autoUpdater.checkForUpdatesAndNotify();
 }
+
+// Handle update
+autoUpdater.on("update-available", () => {
+  log.info("Update available");
+});
+
+// Handle update downloaded
+autoUpdater.on("update-downloaded", () => {
+  dialog.showMessageBox({
+    type: "info",
+    title: "Update Ready",
+    message: "A new version is available. Restart app to apply update?",
+    buttons: ["Restart", "Later"],
+  }).then(result => {
+    if (result.response === 0) autoUpdater.quitAndInstall();
+  });
+});
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.

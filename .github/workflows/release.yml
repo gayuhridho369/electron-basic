@@ -1,0 +1,52 @@
+name: Release Electron App
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: npm install
+
+      - name: Build macOS
+        run: npm run make
+
+      - name: Upload macOS to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: out/make/**/*
+
+  release-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: npm install
+
+      - name: Build Windows
+        run: npm run make
+
+      - name: Upload Windows to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: out/make/**/*
+
+  release-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: npm install
+
+      - name: Build Linux
+        run: npm run make
+
+      - name: Upload Linux to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: out/make/**/*
