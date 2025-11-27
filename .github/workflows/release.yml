@@ -1,0 +1,93 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger ketika push tag v1.0.0, v2.0.0, dll
+
+permissions:
+  contents: write # Required untuk create release dan upload assets
+
+jobs:
+  release:
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false # Jangan stop job lain jika satu gagal
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      # Install system dependencies untuk Linux
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm libarchive-tools
+
+      # Install Python untuk rebuild native modules
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Install dependencies
+      - name: Install project dependencies
+        run: npm ci
+
+      # Rebuild native modules (better-sqlite3)
+      - name: Rebuild native modules
+        run: npm rebuild better-sqlite3
+
+      # Build and publish
+      - name: Publish to GitHub Releases
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run publish
+
+      # Upload artifacts jika publish gagal (untuk debugging)
+      - name: Upload build artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.os }}
+          path: out/make/**/*
+          retention-days: 7
+
+  # Create unified release notes setelah semua build selesai
+  finalize:
+    needs: release
+    runs-on: ubuntu-latest
+    if: success()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history untuk generate release notes
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create release summary
+        run: |
+          echo "## 🎉 Release ${{ steps.version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Build completed for all platforms!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Available Downloads:" >> $GITHUB_STEP_SUMMARY
+          echo "- Windows: .exe installer + .zip portable" >> $GITHUB_STEP_SUMMARY
+          echo "- macOS: .dmg installer + .zip" >> $GITHUB_STEP_SUMMARY
+          echo "- Linux: .deb (Debian/Ubuntu) + .rpm (Fedora/RHEL)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "👉 [View Release](https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.VERSION }})" >> $GITHUB_STEP_SUMMARY
