@@ -8,6 +8,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { createRoot } from 'react-dom/client'
 import { Toaster } from 'sonner'
 import Counter from './counter'
+import UpdateLoader from './loader'
 import Note from './note'
 import PointOfSales from './pos'
 import '../styles/globals.css'
@@ -61,6 +62,8 @@ root.render(
             </TabsContent>
           </Tabs>
         </div>
+
+        <UpdateLoader />
 
         <ReactQueryDevtools initialIsOpen={false} />
       </ThemeProvider>

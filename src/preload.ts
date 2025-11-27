@@ -29,10 +29,27 @@ const posAPI = {
     ipcRenderer.invoke('pos:create', dto),
 }
 
+const electronAPI = {
+  onUpdateProgress: (callback: (percent: number) => void) => {
+    const channel = 'update-progress'
+    const listener = (_: Electron.IpcRendererEvent, percent: number) =>
+      callback(percent)
+
+    ipcRenderer.on(channel, listener)
+
+    return () => {
+      ipcRenderer.removeListener(channel, listener)
+    }
+  },
+}
+
+contextBridge.exposeInMainWorld('electronAPI', electronAPI)
 contextBridge.exposeInMainWorld('notesAPI', notesAPI)
 contextBridge.exposeInMainWorld('posAPI', posAPI)
+
 declare global {
   interface Window {
+    electronAPI: typeof electronAPI
     notesAPI: typeof notesAPI
     posAPI: typeof posAPI
   }

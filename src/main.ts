@@ -1,95 +1,130 @@
-import path from 'node:path'
-
-import { app, BrowserWindow, dialog } from 'electron'
-import started from 'electron-squirrel-startup'
-import { initDatabase } from './server/database'
-import { registerNotesHandlers } from './server/handlers/note.handler'
-import { registerPosHandlers } from './server/handlers/pos.handler'
+import path from "node:path";
+import { app, BrowserWindow, dialog } from "electron";
+import started from "electron-squirrel-startup";
 import { autoUpdater } from "electron-updater";
 import log from "electron-log";
 
-// Setup logger
+import { initDatabase } from "./server/database";
+import { registerNotesHandlers } from "./server/handlers/note.handler";
+import { registerPosHandlers } from "./server/handlers/pos.handler";
+
+// ------------------------------
+// Electron Squirrel (Windows)
+// ------------------------------
+if (started) {
+  app.quit();
+}
+
+// ------------------------------
+// Auto-updater Logger
+// ------------------------------
 log.transports.file.level = "info";
 autoUpdater.logger = log;
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (started) {
-  app.quit()
-}
+// ------------------------------
+// Create Main Window
+// ------------------------------
+let mainWindow: BrowserWindow | null = null;
 
 const createWindow = () => {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, "preload.js"),
     },
-  })
+  });
 
-  // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL)
+    mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
     mainWindow.loadFile(
-      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
-    )
+      path.join(
+        __dirname,
+        `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`
+      )
+    );
   }
+};
 
-  // Cek update setelah window siap
-  autoUpdater.checkForUpdatesAndNotify();
-}
+// ------------------------------
+// Auto Update Logic
+// ------------------------------
+const setupAutoUpdater = () => {
+  // Check updates AFTER app is ready
+  autoUpdater.checkForUpdates();
 
-// Handle update
-autoUpdater.on("update-available", () => {
-  log.info("Update available");
-});
-
-// Handle update downloaded
-autoUpdater.on("update-downloaded", () => {
-  dialog.showMessageBox({
-    type: "info",
-    title: "Update Ready",
-    message: "A new version is available. Restart app to apply update?",
-    buttons: ["Restart", "Later"],
-  }).then(result => {
-    if (result.response === 0) autoUpdater.quitAndInstall();
+  // When update is found
+  autoUpdater.on("update-available", (info) => {
+    log.info("Update available:", info);
+    dialog.showMessageBox({
+      type: "info",
+      title: "Update Available",
+      message: `A new version (${info.version}) is available. Download now?`,
+      buttons: ["Download", "Later"],
+    }).then((result) => {
+      if (result.response === 0) {
+        autoUpdater.downloadUpdate();
+      }
+    });
   });
+
+  // Download progress
+  autoUpdater.on("download-progress", (progress) => {
+    log.info(`Download progress: ${progress.percent.toFixed(2)}%`);
+    mainWindow?.webContents.send("update-progress", progress.percent);
+  });
+
+  // When update is downloaded
+  autoUpdater.on("update-downloaded", (info) => {
+    log.info("Update downloaded:", info);
+    dialog.showMessageBox({
+      type: "info",
+      title: "Update Ready",
+      message: "Update downloaded. Restart app to install now?",
+      buttons: ["Restart", "Later"],
+    }).then((result) => {
+      if (result.response === 0) {
+        autoUpdater.quitAndInstall();
+      }
+    });
+  });
+
+  // Update errors
+  autoUpdater.on("error", (err) => {
+    log.error("Auto-updater error:", err);
+  });
+};
+
+// ------------------------------
+// App Ready
+// ------------------------------
+app.on("ready", async () => {
+  // Initialize database
+  initDatabase();
+
+  // Register IPC handlers
+  registerNotesHandlers();
+  registerPosHandlers();
+
+  // Create main window
+  createWindow();
+
+  // Setup auto-updater after window is ready
+  setupAutoUpdater();
 });
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', () => {
-  // Init database
-  initDatabase()
-
-  // Register IPC handlers
-  registerNotesHandlers()
-
-  // Register IPC handlers
-  registerPosHandlers()
-
-  // Create window app
-  createWindow()
-})
-
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
+// ------------------------------
+// App Lifecycle
+// ------------------------------
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    app.quit();
   }
-})
+});
 
-app.on('activate', () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
+app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow()
+    createWindow();
   }
-})
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
+});
