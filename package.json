@@ -3,6 +3,7 @@
   "name": "electron-basic",
   "productName": "electron-basic",
   "description": "My Electron application description",
+  "license": "MIT",
   "author": {
     "name": "Gayuh Ridho",
     "email": "gayuhridho369@gmail.com"
