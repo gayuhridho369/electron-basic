@@ -1,11 +1,11 @@
 export interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  issues?: ValidationError[];
+  success: boolean
+  data?: T
+  error?: string
+  issues?: ValidationError[]
 }
 
 export interface ValidationError {
-  field: string;
-  message: string;
+  field: string
+  message: string
 }
